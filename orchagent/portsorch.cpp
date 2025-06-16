@@ -7497,13 +7497,24 @@ bool PortsOrch::setCollectionOnLagMember(Port &lagMember, bool enableCollection)
     status = sai_lag_api->set_lag_member_attribute(lagMember.m_lag_member_id, &attr);
     if (status != SAI_STATUS_SUCCESS)
     {
-        SWSS_LOG_ERROR("Failed to %s collection on LAG member %s",
-            enableCollection ? "enable" : "disable",
-            lagMember.m_alias.c_str());
-        task_process_status handle_status = handleSaiSetStatus(SAI_API_LAG, status);
-        if (handle_status != task_success)
+        if (status == SAI_STATUS_ITEM_NOT_FOUND)
         {
-            return parseHandleSaiStatusFailure(handle_status);
+            SWSS_LOG_ERROR("Failed to locate LAG member %s and %s collection on it",
+                lagMember.m_alias.c_str(),
+                enableCollection ? "enable" : "disable");
+            return true;
+        }
+        else
+        {
+            SWSS_LOG_ERROR("Failed to %s collection on LAG member %s",
+                enableCollection ? "enable" : "disable",
+                lagMember.m_alias.c_str());
+
+            task_process_status handle_status = handleSaiSetStatus(SAI_API_LAG, status);
+            if (handle_status != task_success)
+            {
+                return parseHandleSaiStatusFailure(handle_status);
+            }
         }
     }
 
